@@ -8,7 +8,7 @@ import type { BlueprintGraph, FormNode, FormDefinition } from '../shared/types';
 
 // Mock fetch globally
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 // Test fixtures
 const createMockFormDefinition = (id: string): FormDefinition => ({

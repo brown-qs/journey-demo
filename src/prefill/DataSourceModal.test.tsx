@@ -2,11 +2,11 @@
  * Tests for the DataSourceModal component.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DataSourceModal } from './DataSourceModal';
-import { dataSourceRegistry, DataSourceRegistry } from '../dataSources';
-import type { DataSourceProvider, DataSourceGroup } from '../dataSources';
+import { dataSourceRegistry } from '../dataSources';
+import type { DataSourceGroup } from '../dataSources';
 import type { FormNode, BlueprintGraph } from '../shared/types';
 
 // Mock the dataSourceRegistry

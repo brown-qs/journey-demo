@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PrefillPanel } from './PrefillPanel';
-import type { FormNode, BlueprintGraph, FormDefinition } from '../shared/types';
+import type { FormNode, BlueprintGraph, FormDefinition, PrefillMapping } from '../shared/types';
 
 // Test fixtures
 const createMockFormDefinition = (id: string): FormDefinition => ({
@@ -38,7 +38,7 @@ const createMockFormDefinition = (id: string): FormDefinition => ({
 
 const createMockNode = (
   id: string = 'test-node',
-  inputMapping: Record<string, unknown> = {}
+  inputMapping: Record<string, PrefillMapping> = {}
 ): FormNode => ({
   id,
   type: 'form',
