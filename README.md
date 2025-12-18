@@ -48,6 +48,17 @@ npm run dev
 # App runs on http://localhost:5173
 ```
 
+### Environment Configuration
+
+Create a `.env` file in the project root to configure the API URL:
+
+```bash
+# API base URL (defaults to http://localhost:3000)
+VITE_API_BASE_URL=http://localhost:3000
+```
+
+For production deployments, set `VITE_API_BASE_URL` to your API server's URL.
+
 ### Running Tests
 
 ```bash
@@ -64,6 +75,36 @@ npm run test:coverage
 ---
 
 ## Architecture
+
+### High-Level Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         App.tsx                                  │
+│  ┌─────────────────┐  ┌─────────────────────────────────────┐   │
+│  │   FormList      │  │           PrefillPanel              │   │
+│  │   (sidebar)     │  │  ┌─────────────────────────────┐    │   │
+│  │                 │  │  │    DataSourceModal          │    │   │
+│  │  • Shows forms  │  │  │    • Search/filter          │    │   │
+│  │  • Sorted by    │  │  │    • Select mapping         │    │   │
+│  │    dependency   │  │  └─────────────────────────────┘    │   │
+│  └────────┬────────┘  └──────────────────┬──────────────────┘   │
+│           │                              │                       │
+│           └──────────────┬───────────────┘                       │
+│                          ▼                                       │
+│                    useGraph hook                                 │
+│                (state management)                                │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+          ┌────────────────┼────────────────┐
+          ▼                ▼                ▼
+    ┌──────────┐    ┌───────────┐    ┌────────────────┐
+    │ dagUtils │    │ graphSvc  │    │ DataSource     │
+    │          │    │           │    │ Registry       │
+    │ • topoSort│   │ • fetch   │    │                │
+    │ • getDeps │   │ • update  │    │ • Providers    │
+    └──────────┘    └───────────┘    └────────────────┘
+```
 
 ### Project Structure
 
@@ -132,90 +173,15 @@ The `dagUtils` module provides algorithms for traversing the form dependency gra
 - `getTransitiveDependencies`: Indirect dependencies (dependencies of dependencies)
 - `topologicalSort`: Order forms so dependencies come first
 
----
+#### 5. Component Conventions
 
-## Extending with New Data Sources
-
-Adding a new data source is straightforward:
-
-### Step 1: Create a Provider Class
-
-```typescript
-// src/dataSources/MyCustomProvider.ts
-import type { DataSourceProvider, DataSourceGroup } from './DataSourceProvider';
-import type { FormNode, BlueprintGraph } from '../shared/types';
-
-export class MyCustomProvider implements DataSourceProvider {
-  id = 'my-custom-provider';
-  name = 'My Custom Data';
-  priority = 40;  // Lower = higher in the list
-
-  isApplicable(node: FormNode, graph: BlueprintGraph): boolean {
-    // Return true if this provider should be available
-    // for the selected node
-    return true;
-  }
-
-  getDataSources(node: FormNode, graph: BlueprintGraph): DataSourceGroup[] {
-    return [{
-      id: 'my-group',
-      name: 'My Data Group',
-      type: 'global',  // 'global' or 'form'
-      items: [{
-        id: 'my-item-1',
-        label: 'My Item',
-        type: 'global',
-        sourceId: 'my-source',
-        sourceName: 'My Source',
-        fieldId: 'my-field',
-        fieldName: 'My Field',
-        fieldType: 'string',
-      }],
-    }];
-  }
-}
-```
-
-### Step 2: Register the Provider
-
-```typescript
-// In src/dataSources/index.ts
-import { dataSourceRegistry } from './DataSourceProvider';
-import { MyCustomProvider } from './MyCustomProvider';
-
-dataSourceRegistry.register(new MyCustomProvider());
-```
-
-That's it! Your new data source will automatically appear in the prefill modal.
-
-### Provider Interface Details
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `id` | `string` | Unique identifier for the provider |
-| `name` | `string` | Display name shown in the UI |
-| `priority` | `number` | Sort order (lower = higher priority) |
-| `isApplicable()` | `boolean` | Whether to show for current node |
-| `getDataSources()` | `DataSourceGroup[]` | Available data items |
-
-### Adding Global Data Sources (Simpler Approach)
-
-For simple global data, you can extend the existing `GlobalDataProvider`:
-
-```typescript
-import { GlobalDataProvider } from './dataSources';
-
-const provider = new GlobalDataProvider();
-provider.addSource({
-  id: 'my-api-data',
-  name: 'External API Data',
-  description: 'Data from external API',
-  fields: [
-    { id: 'api_value_1', name: 'API Value 1', type: 'string' },
-    { id: 'api_value_2', name: 'API Value 2', type: 'number' },
-  ],
-});
-```
+| Convention | Example | Why |
+|------------|---------|-----|
+| Named exports only | `export const Button = ...` | Consistent naming, better refactoring |
+| Props suffix | `interface ButtonProps` | Clear purpose identification |
+| `handle` for handlers | `handleClick`, `handleSubmit` | Distinguishes internal handlers from props |
+| `on` for event props | `onClick`, `onSelect` | Standard React convention |
+| `use` prefix for hooks | `useGraph`, `useNodeFields` | Required by React rules of hooks |
 
 ---
 
@@ -238,20 +204,28 @@ See `mock-server/graph.json` for the complete data structure.
 
 ## Testing
 
-The codebase includes comprehensive tests:
+The codebase includes **113 tests** across 8 test files:
 
-| Test File | Coverage |
-|-----------|----------|
-| `DataSourceProvider.test.ts` | Registry operations, provider sorting |
-| `FormFieldsProvider.test.ts` | Direct/transitive dependency providers |
-| `GlobalDataProvider.test.ts` | Global data configuration |
-| `dagUtils.test.ts` | DAG traversal algorithms |
-| `FormList.test.tsx` | Form list component |
-| `DataSourceModal.test.tsx` | Modal interactions |
+| Test File | Tests | Coverage |
+|-----------|-------|----------|
+| `DataSourceProvider.test.ts` | 7 | Registry operations, provider sorting |
+| `FormFieldsProvider.test.ts` | 10 | Direct/transitive dependency providers |
+| `GlobalDataProvider.test.ts` | 9 | Global data configuration |
+| `dagUtils.test.ts` | 16 | DAG traversal algorithms |
+| `useGraph.test.tsx` | 20 | Graph hook state management |
+| `FormList.test.tsx` | 9 | Form list component rendering |
+| `PrefillPanel.test.tsx` | 17 | Prefill panel interactions |
+| `DataSourceModal.test.tsx` | 25 | Modal search, selection, accessibility |
 
-Run all tests:
 ```bash
+# Run all tests
 npm run test:run
+
+# Run tests in watch mode
+npm test
+
+# Run with coverage report
+npm run test:coverage
 ```
 
 ---
