@@ -36,8 +36,7 @@ export const App = () => {
           <h2>Connection Error</h2>
           <p>{error}</p>
           <div className={styles.errorHelp}>
-            <p>Make sure the mock server is running:</p>
-            <code>cd mock-server && npm start</code>
+            <p>Unable to reach the API server. Please check your connection.</p>
           </div>
           <button className={styles.retryButton} onClick={refetch}>
             <RefreshCw size={16} />

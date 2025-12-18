@@ -18,7 +18,12 @@ export const fetchBlueprintGraph = (
   const url = `${API_BASE_URL}/api/v1/${tenantId}/actions/blueprints/${blueprintId}/graph`;
 
   return ResultAsync.fromPromise(
-    fetch(url).then(async (response) => {
+    fetch(url, {
+      headers: {
+        // Skip ngrok's browser warning page for free tier
+        'ngrok-skip-browser-warning': 'true',
+      },
+    }).then(async (response) => {
       if (!response.ok) {
         throw new ApiError(
           `API request failed: ${response.statusText}`,
